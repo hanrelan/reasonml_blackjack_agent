@@ -66,7 +66,7 @@ function argmax(arr) {
 }
 
 function select_action_epsilon(eps, round) {
-  if (Random.$$int(100) < eps) {
+  if (Random.$$float(100.0) < eps) {
     return Caml_array.caml_array_get(actions, Random.$$int(actions.length));
   } else {
     var action_values = $$Array.map((function (param) {
@@ -75,10 +75,6 @@ function select_action_epsilon(eps, round) {
     var max_action_index = argmax(action_values);
     return Caml_array.caml_array_get(actions, max_action_index);
   }
-}
-
-function select_action(param) {
-  return select_action_epsilon(5, param);
 }
 
 function get_reward(round) {
@@ -108,21 +104,24 @@ function get_reward(round) {
   }
 }
 
-function update_q(old_state, action, next_state) {
+function update_q(old_state, action, next_state, policy) {
   var q_value = get_q_value(old_state, action);
   var match = get_reward(next_state);
-  var next_action = select_action(next_state);
+  var next_action = Curry._1(policy, next_state);
   var next_q_value = get_q_value(next_state, next_action);
   var new_q_value = q_value + 0.1 * (match[0] + 0.9 * next_q_value - q_value);
   return Hashtbl.replace(q, round_to_q_key(old_state, action), new_q_value);
 }
 
-function run_episode(_round) {
+function run_episode(_round, epsilon) {
   while(true) {
     var round = _round;
-    var action = select_action(round);
+    var select_action = function (param) {
+      return select_action_epsilon(epsilon, param);
+    };
+    var action = select_action_epsilon(epsilon, round);
     var result_round = Blackjack$Blackjackagent.play(round, action);
-    update_q(round, action, result_round);
+    update_q(round, action, result_round, select_action);
     var match = get_reward(result_round);
     if (match[1] !== 0) {
       return /* () */0;
@@ -135,8 +134,11 @@ function run_episode(_round) {
 }
 
 function train(iterations) {
-  for(var _for = 0; _for <= iterations; ++_for){
-    run_episode(Blackjack$Blackjackagent.new_round(/* () */0));
+  var epsilon = 50.0;
+  var epsilon_decay = 1.0 - 1.0 / (iterations / 10 | 0);
+  for(var _iteration = 1 ,_iteration_finish = iterations + 1 | 0; _iteration <= _iteration_finish; ++_iteration){
+    epsilon = epsilon * epsilon_decay;
+    run_episode(Blackjack$Blackjackagent.new_round(/* () */0), epsilon);
   }
   return /* () */0;
 }
@@ -183,7 +185,7 @@ function print_q() {
           ]),
         "   "
       ]);
-  for(var dealer_value = 1; dealer_value <= 11; ++dealer_value){
+  for(var dealer_value = 2; dealer_value <= 11; ++dealer_value){
     Curry._1(Printf.printf(/* Format */[
               /* Int */Block.__(4, [
                   /* Int_i */3,
@@ -207,7 +209,7 @@ function print_q() {
           ]),
         "\n"
       ]);
-  for(var player_value = 1; player_value <= 21; ++player_value){
+  for(var player_value = 2; player_value <= 21; ++player_value){
     Curry._1(Printf.printf(/* Format */[
               /* Int */Block.__(4, [
                   /* Int_i */3,
@@ -223,7 +225,7 @@ function print_q() {
                 ]),
               "%2i "
             ]), player_value);
-    for(var dealer_value$1 = 1; dealer_value$1 <= 11; ++dealer_value$1){
+    for(var dealer_value$1 = 2; dealer_value$1 <= 11; ++dealer_value$1){
       var match = best_action(dealer_value$1, player_value);
       Curry._1(Printf.printf(/* Format */[
                 /* String */Block.__(2, [
@@ -250,18 +252,15 @@ function print_q() {
   return /* () */0;
 }
 
-train(2000000);
+train(3000000);
 
 print_q(/* () */0);
-
-var epsilon = 5;
 
 var alpha = 0.1;
 
 var gamma = 0.9;
 
 exports.q                     = q;
-exports.epsilon               = epsilon;
 exports.alpha                 = alpha;
 exports.gamma                 = gamma;
 exports.actions               = actions;
@@ -269,7 +268,6 @@ exports.round_to_q_key        = round_to_q_key;
 exports.get_q_value           = get_q_value;
 exports.argmax                = argmax;
 exports.select_action_epsilon = select_action_epsilon;
-exports.select_action         = select_action;
 exports.get_reward            = get_reward;
 exports.update_q              = update_q;
 exports.run_episode           = run_episode;
