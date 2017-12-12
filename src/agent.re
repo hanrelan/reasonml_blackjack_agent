@@ -8,9 +8,9 @@ type reward = (float, reward_type);
 
 let q = Hashtbl.create(420); /* 10 dealer cards * 21 player possibilities * 2 actions */
 
-let alpha = 0.1;
+let alpha = 0.01;
 
-let gamma = 0.9;
+let gamma = 1.0;
 
 let actions = Array.of_list([Hit, Stand]);
 
@@ -94,14 +94,15 @@ let action_to_string = (action) =>
   | Stand => "S"
   };
 
+let get_action_value = (dealer_value, player_value, action) => {
+  let key = (dealer_value, player_value, action);
+  try (Hashtbl.find(q, key)) {
+  | Not_found => 0.0
+  }
+};
+
 let best_action = (dealer_value, player_value) => {
-  let get_action_value = (action) => {
-    let key = (dealer_value, player_value, action);
-    try (Hashtbl.find(q, key)) {
-    | Not_found => 0.0
-    }
-  };
-  let action_values = Array.map(get_action_value, actions);
+  let action_values = Array.map(get_action_value(dealer_value, player_value), actions);
   let max_action_index = argmax(action_values);
   (actions[max_action_index], action_values[max_action_index])
 };
@@ -109,19 +110,48 @@ let best_action = (dealer_value, player_value) => {
 let print_q = () => {
   Printf.printf("   ");
   for (dealer_value in 2 to 11) {
-    Printf.printf("%2i ", dealer_value)
+    Printf.printf("%3i ", dealer_value)
+  };
+  Printf.printf("\n");
+  for (player_value in 2 to 21) {
+    Printf.printf("%3i ", player_value);
+    for (dealer_value in 2 to 11) {
+      let (action, _best_action_val) = best_action(dealer_value, player_value);
+      Printf.printf("%3s ", action_to_string(action))
+    };
+    Printf.printf("\n")
+  };
+  Printf.printf("\n\n");
+  Printf.printf("  ");
+  for (dealer_value in 2 to 11) {
+    Printf.printf("%7i ", dealer_value)
   };
   Printf.printf("\n");
   for (player_value in 2 to 21) {
     Printf.printf("%2i ", player_value);
     for (dealer_value in 2 to 11) {
-      let (action, _best_action_val) = best_action(dealer_value, player_value);
-      Printf.printf("%2s ", action_to_string(action))
+      let (action, best_action_val) = best_action(dealer_value, player_value);
+      Printf.printf("%5.1f(%s)", best_action_val, action_to_string(action))
+    };
+    Printf.printf("\n")
+  };
+  Printf.printf("\n\n");
+  Printf.printf("  ");
+  for (dealer_value in 2 to 11) {
+    Printf.printf("%4i ", dealer_value)
+  };
+  Printf.printf("\n");
+  for (player_value in 2 to 21) {
+    Printf.printf("%2i ", player_value);
+    for (dealer_value in 2 to 11) {
+      let hit_val = get_action_value(dealer_value, player_value, Hit);
+      let stand_val = get_action_value(dealer_value, player_value, Stand);
+      Printf.printf("%5.1f", abs_float(hit_val -. stand_val))
     };
     Printf.printf("\n")
   }
 };
 
-train(3000000);
+train(10_000_000);
 
 print_q();

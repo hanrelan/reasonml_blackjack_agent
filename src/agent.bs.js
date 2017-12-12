@@ -109,7 +109,7 @@ function update_q(old_state, action, next_state, policy) {
   var match = get_reward(next_state);
   var next_action = Curry._1(policy, next_state);
   var next_q_value = get_q_value(next_state, next_action);
-  var new_q_value = q_value + 0.1 * (match[0] + 0.9 * next_q_value - q_value);
+  var new_q_value = q_value + 0.01 * (match[0] + 1.0 * next_q_value - q_value);
   return Hashtbl.replace(q, round_to_q_key(old_state, action), new_q_value);
 }
 
@@ -151,25 +151,28 @@ function action_to_string(action) {
   }
 }
 
+function get_action_value(dealer_value, player_value, action) {
+  var key = /* tuple */[
+    dealer_value,
+    player_value,
+    action
+  ];
+  try {
+    return Hashtbl.find(q, key);
+  }
+  catch (exn){
+    if (exn === Caml_builtin_exceptions.not_found) {
+      return 0.0;
+    } else {
+      throw exn;
+    }
+  }
+}
+
 function best_action(dealer_value, player_value) {
-  var get_action_value = function (action) {
-    var key = /* tuple */[
-      dealer_value,
-      player_value,
-      action
-    ];
-    try {
-      return Hashtbl.find(q, key);
-    }
-    catch (exn){
-      if (exn === Caml_builtin_exceptions.not_found) {
-        return 0.0;
-      } else {
-        throw exn;
-      }
-    }
-  };
-  var action_values = $$Array.map(get_action_value, actions);
+  var action_values = $$Array.map((function (param) {
+          return get_action_value(dealer_value, player_value, param);
+        }), actions);
   var max_action_index = argmax(action_values);
   return /* tuple */[
           Caml_array.caml_array_get(actions, max_action_index),
@@ -191,7 +194,7 @@ function print_q() {
                   /* Int_i */3,
                   /* Lit_padding */Block.__(0, [
                       /* Right */1,
-                      2
+                      3
                     ]),
                   /* No_precision */0,
                   /* Char_literal */Block.__(12, [
@@ -199,7 +202,7 @@ function print_q() {
                       /* End_of_format */0
                     ])
                 ]),
-              "%2i "
+              "%3i "
             ]), dealer_value);
   }
   Printf.printf(/* Format */[
@@ -215,6 +218,84 @@ function print_q() {
                   /* Int_i */3,
                   /* Lit_padding */Block.__(0, [
                       /* Right */1,
+                      3
+                    ]),
+                  /* No_precision */0,
+                  /* Char_literal */Block.__(12, [
+                      /* " " */32,
+                      /* End_of_format */0
+                    ])
+                ]),
+              "%3i "
+            ]), player_value);
+    for(var dealer_value$1 = 2; dealer_value$1 <= 11; ++dealer_value$1){
+      var match = best_action(dealer_value$1, player_value);
+      Curry._1(Printf.printf(/* Format */[
+                /* String */Block.__(2, [
+                    /* Lit_padding */Block.__(0, [
+                        /* Right */1,
+                        3
+                      ]),
+                    /* Char_literal */Block.__(12, [
+                        /* " " */32,
+                        /* End_of_format */0
+                      ])
+                  ]),
+                "%3s "
+              ]), action_to_string(match[0]));
+    }
+    Printf.printf(/* Format */[
+          /* Char_literal */Block.__(12, [
+              /* "\n" */10,
+              /* End_of_format */0
+            ]),
+          "\n"
+        ]);
+  }
+  Printf.printf(/* Format */[
+        /* String_literal */Block.__(11, [
+            "\n\n",
+            /* End_of_format */0
+          ]),
+        "\n\n"
+      ]);
+  Printf.printf(/* Format */[
+        /* String_literal */Block.__(11, [
+            "  ",
+            /* End_of_format */0
+          ]),
+        "  "
+      ]);
+  for(var dealer_value$2 = 2; dealer_value$2 <= 11; ++dealer_value$2){
+    Curry._1(Printf.printf(/* Format */[
+              /* Int */Block.__(4, [
+                  /* Int_i */3,
+                  /* Lit_padding */Block.__(0, [
+                      /* Right */1,
+                      7
+                    ]),
+                  /* No_precision */0,
+                  /* Char_literal */Block.__(12, [
+                      /* " " */32,
+                      /* End_of_format */0
+                    ])
+                ]),
+              "%7i "
+            ]), dealer_value$2);
+  }
+  Printf.printf(/* Format */[
+        /* Char_literal */Block.__(12, [
+            /* "\n" */10,
+            /* End_of_format */0
+          ]),
+        "\n"
+      ]);
+  for(var player_value$1 = 2; player_value$1 <= 21; ++player_value$1){
+    Curry._1(Printf.printf(/* Format */[
+              /* Int */Block.__(4, [
+                  /* Int_i */3,
+                  /* Lit_padding */Block.__(0, [
+                      /* Right */1,
                       2
                     ]),
                   /* No_precision */0,
@@ -224,22 +305,108 @@ function print_q() {
                     ])
                 ]),
               "%2i "
-            ]), player_value);
-    for(var dealer_value$1 = 2; dealer_value$1 <= 11; ++dealer_value$1){
-      var match = best_action(dealer_value$1, player_value);
-      Curry._1(Printf.printf(/* Format */[
-                /* String */Block.__(2, [
+            ]), player_value$1);
+    for(var dealer_value$3 = 2; dealer_value$3 <= 11; ++dealer_value$3){
+      var match$1 = best_action(dealer_value$3, player_value$1);
+      Curry._2(Printf.printf(/* Format */[
+                /* Float */Block.__(8, [
+                    /* Float_f */0,
                     /* Lit_padding */Block.__(0, [
                         /* Right */1,
-                        2
+                        5
                       ]),
+                    /* Lit_precision */[1],
                     /* Char_literal */Block.__(12, [
-                        /* " " */32,
-                        /* End_of_format */0
+                        /* "(" */40,
+                        /* String */Block.__(2, [
+                            /* No_padding */0,
+                            /* Char_literal */Block.__(12, [
+                                /* ")" */41,
+                                /* End_of_format */0
+                              ])
+                          ])
                       ])
                   ]),
-                "%2s "
-              ]), action_to_string(match[0]));
+                "%5.1f(%s)"
+              ]), match$1[1], action_to_string(match$1[0]));
+    }
+    Printf.printf(/* Format */[
+          /* Char_literal */Block.__(12, [
+              /* "\n" */10,
+              /* End_of_format */0
+            ]),
+          "\n"
+        ]);
+  }
+  Printf.printf(/* Format */[
+        /* String_literal */Block.__(11, [
+            "\n\n",
+            /* End_of_format */0
+          ]),
+        "\n\n"
+      ]);
+  Printf.printf(/* Format */[
+        /* String_literal */Block.__(11, [
+            "  ",
+            /* End_of_format */0
+          ]),
+        "  "
+      ]);
+  for(var dealer_value$4 = 2; dealer_value$4 <= 11; ++dealer_value$4){
+    Curry._1(Printf.printf(/* Format */[
+              /* Int */Block.__(4, [
+                  /* Int_i */3,
+                  /* Lit_padding */Block.__(0, [
+                      /* Right */1,
+                      4
+                    ]),
+                  /* No_precision */0,
+                  /* Char_literal */Block.__(12, [
+                      /* " " */32,
+                      /* End_of_format */0
+                    ])
+                ]),
+              "%4i "
+            ]), dealer_value$4);
+  }
+  Printf.printf(/* Format */[
+        /* Char_literal */Block.__(12, [
+            /* "\n" */10,
+            /* End_of_format */0
+          ]),
+        "\n"
+      ]);
+  for(var player_value$2 = 2; player_value$2 <= 21; ++player_value$2){
+    Curry._1(Printf.printf(/* Format */[
+              /* Int */Block.__(4, [
+                  /* Int_i */3,
+                  /* Lit_padding */Block.__(0, [
+                      /* Right */1,
+                      2
+                    ]),
+                  /* No_precision */0,
+                  /* Char_literal */Block.__(12, [
+                      /* " " */32,
+                      /* End_of_format */0
+                    ])
+                ]),
+              "%2i "
+            ]), player_value$2);
+    for(var dealer_value$5 = 2; dealer_value$5 <= 11; ++dealer_value$5){
+      var hit_val = get_action_value(dealer_value$5, player_value$2, /* Hit */0);
+      var stand_val = get_action_value(dealer_value$5, player_value$2, /* Stand */1);
+      Curry._1(Printf.printf(/* Format */[
+                /* Float */Block.__(8, [
+                    /* Float_f */0,
+                    /* Lit_padding */Block.__(0, [
+                        /* Right */1,
+                        5
+                      ]),
+                    /* Lit_precision */[1],
+                    /* End_of_format */0
+                  ]),
+                "%5.1f"
+              ]), Math.abs(hit_val - stand_val));
     }
     Printf.printf(/* Format */[
           /* Char_literal */Block.__(12, [
@@ -252,13 +419,13 @@ function print_q() {
   return /* () */0;
 }
 
-train(3000000);
+train(10000000);
 
 print_q(/* () */0);
 
-var alpha = 0.1;
+var alpha = 0.01;
 
-var gamma = 0.9;
+var gamma = 1.0;
 
 exports.q                     = q;
 exports.alpha                 = alpha;
@@ -273,6 +440,7 @@ exports.update_q              = update_q;
 exports.run_episode           = run_episode;
 exports.train                 = train;
 exports.action_to_string      = action_to_string;
+exports.get_action_value      = get_action_value;
 exports.best_action           = best_action;
 exports.print_q               = print_q;
 /* q Not a pure module */
